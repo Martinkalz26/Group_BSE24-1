@@ -15,7 +15,7 @@ jobs:
       mysql:
         image: mysql:latest
         env:
-          MYSQL_ROOT_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: ""
           MYSQL_DATABASE: appointment
         options: > 
           --health-cmd="mysqladmin ping" 
