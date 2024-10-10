@@ -13,11 +13,15 @@ test('api token permissions can be updated', function () {
         $this->actingAs($user = User::factory()->create());
     }
 
+    // Create the token for the user
     $token = $user->tokens()->create([
         'name' => 'Test Token',
         'token' => Str::random(40),
         'abilities' => ['create', 'read'],
     ]);
+
+    // Ensure the token was created successfully
+    $this->assertNotNull($token);
 
     Livewire::test(ApiTokenManager::class)
         ->set(['managingPermissionsFor' => $token])
@@ -29,6 +33,7 @@ test('api token permissions can be updated', function () {
         ]])
         ->call('updateApiToken');
 
+    // Check if the permissions are updated correctly
     expect($user->fresh()->tokens->first())
         ->can('delete')->toBeTrue()
         ->can('read')->toBeFalse()
