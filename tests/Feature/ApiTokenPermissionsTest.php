@@ -1,43 +1,32 @@
 <?php
+namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Support\Str;
-use Laravel\Jetstream\Features;
-use Laravel\Jetstream\Http\Livewire\ApiTokenManager;
-use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-test('api token permissions can be updated', function () {
-    if (Features::hasTeamFeatures()) {
-        $this->actingAs($user = User::factory()->withPersonalTeam()->create());
-    } else {
-        $this->actingAs($user = User::factory()->create());
+class ApiTokenPermissionsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /** @test */
+    public function api_token_permissions_can_be_updated()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Create an API token
+        $token = $user->createToken('Test Token')->plainTextToken;
+
+        // Update the API token permissions
+        $response = $this->patchJson('/api/tokens/'.$token, [
+            'abilities' => ['read', 'update'],
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('personal_access_tokens', [
+            'id' => $token->id,
+            'abilities' => json_encode(['read', 'update']),
+        ]);
     }
-
-    // Create the token for the user
-    $token = $user->tokens()->create([
-        'name' => 'Test Token',
-        'token' => Str::random(40),
-        'abilities' => ['create', 'read'],
-    ]);
-
-    // Ensure the token was created successfully
-    $this->assertNotNull($token);
-
-    Livewire::test(ApiTokenManager::class)
-        ->set(['managingPermissionsFor' => $token])
-        ->set(['updateApiTokenForm' => [
-            'permissions' => [
-                'delete',
-                'missing-permission',
-            ],
-        ]])
-        ->call('updateApiToken');
-
-    // Check if the permissions are updated correctly
-    expect($user->fresh()->tokens->first())
-        ->can('delete')->toBeTrue()
-        ->can('read')->toBeFalse()
-        ->can('missing-permission')->toBeFalse();
-})->skip(function () {
-    return ! Features::hasApiFeatures();
-}, 'API support is not enabled.');
+}

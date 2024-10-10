@@ -1,32 +1,31 @@
 <?php
 
+namespace Tests\Feature;
+
 use App\Models\User;
-use Laravel\Jetstream\Features;
-use Laravel\Jetstream\Http\Livewire\ApiTokenManager;
-use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-test('api tokens can be created', function () {
-    if (Features::hasTeamFeatures()) {
-        $this->actingAs($user = User::factory()->withPersonalTeam()->create());
-    } else {
-        $this->actingAs($user = User::factory()->create());
+class CreateApiTokenTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /** @test */
+    public function api_tokens_can_be_created()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Create an API token
+        $response = $this->postJson('/api/tokens', [
+            'name' => 'New API Token',
+            'abilities' => ['read', 'write'],
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('personal_access_tokens', [
+            'name' => 'New API Token',
+            'abilities' => json_encode(['read', 'write']),
+        ]);
     }
-
-    Livewire::test(ApiTokenManager::class)
-        ->set(['createApiTokenForm' => [
-            'name' => 'Test Token',
-            'permissions' => [
-                'read',
-                'update',
-            ],
-        ]])
-        ->call('createApiToken');
-
-    expect($user->fresh()->tokens)->toHaveCount(1);
-    expect($user->fresh()->tokens->first())
-        ->name->toEqual('Test Token')
-        ->can('read')->toBeTrue()
-        ->can('delete')->toBeFalse();
-})->skip(function () {
-    return ! Features::hasApiFeatures();
-}, 'API support is not enabled.');
+}

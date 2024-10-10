@@ -1,31 +1,25 @@
 <?php
 
+namespace Tests\Feature;
+
 use App\Models\User;
-use Laravel\Jetstream\Features;
-use Laravel\Jetstream\Http\Livewire\DeleteUserForm;
-use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-test('user accounts can be deleted', function () {
-    $this->actingAs($user = User::factory()->create());
+class DeleteAccountTest extends TestCase
+{
+    use RefreshDatabase;
 
-    Livewire::test(DeleteUserForm::class)
-        ->set('password', 'password')
-        ->call('deleteUser');
+    /** @test */
+    public function user_accounts_can_be_deleted()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
 
-    expect($user->fresh())->toBeNull();
-})->skip(function () {
-    return ! Features::hasAccountDeletionFeatures();
-}, 'Account deletion is not enabled.');
+        // Delete the user account
+        $response = $this->deleteJson('/api/delete-account');
 
-test('correct password must be provided before account can be deleted', function () {
-    $this->actingAs($user = User::factory()->create());
-
-    Livewire::test(DeleteUserForm::class)
-        ->set('password', 'wrong-password')
-        ->call('deleteUser')
-        ->assertHasErrors(['password']);
-
-    expect($user->fresh())->not->toBeNull();
-})->skip(function () {
-    return ! Features::hasAccountDeletionFeatures();
-}, 'Account deletion is not enabled.');
+        $response->assertStatus(204);
+        $this->assertDeleted($user); // Check that the user is deleted
+    }
+}

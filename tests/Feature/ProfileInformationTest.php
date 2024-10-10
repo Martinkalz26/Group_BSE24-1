@@ -1,26 +1,46 @@
 <?php
 
+namespace Tests\Feature;
+
+use App\Http\Livewire\UpdateProfileInformationForm;
 use App\Models\User;
-use Laravel\Jetstream\Http\Livewire\UpdateProfileInformationForm;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\TestCase;
 
-test('current profile information is available', function () {
-    $this->actingAs($user = User::factory()->create());
+class ProfileInformationTest extends TestCase
+{
+    use RefreshDatabase;
 
-    $component = Livewire::test(UpdateProfileInformationForm::class);
+    /** @test */
+    public function current_profile_information_is_available()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
 
-    expect($component->state['name'])->toEqual($user->name);
-    expect($component->state['email'])->toEqual($user->email);
-});
+        // Test that the current profile information is available
+        $component = Livewire::test(UpdateProfileInformationForm::class);
 
-test('profile information can be updated', function () {
-    $this->actingAs($user = User::factory()->create());
+        $component->assertSet('name', $user->name);
+        $component->assertSet('email', $user->email);
+    }
 
-    Livewire::test(UpdateProfileInformationForm::class)
-        ->set('state', ['name' => 'Test Name', 'email' => 'test@example.com'])
-        ->call('updateProfileInformation');
+    /** @test */
+    public function profile_information_can_be_updated()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
 
-    expect($user->fresh())
-        ->name->toEqual('Test Name')
-        ->email->toEqual('test@example.com');
-});
+        $component = Livewire::test(UpdateProfileInformationForm::class);
+
+        $component->set('name', 'Updated Name')
+                  ->set('email', 'updated@example.com')
+                  ->call('updateProfileInformation');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'name' => 'Updated Name',
+            'email' => 'updated@example.com',
+        ]);
+    }
+}
