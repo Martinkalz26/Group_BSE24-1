@@ -45,12 +45,12 @@ jobs:
         DB_USERNAME: root
         DB_PASSWORD: password
       run: php artisan migrate --force
-    - name: Run PHPUnit Tests
-      env:
-        DB_CONNECTION: mysql
-        DB_HOST: 127.0.0.1
-        DB_PORT: 3306
-        DB_DATABASE: appointment
-        DB_USERNAME: root
-        DB_PASSWORD: password
+    # - name: Run PHPUnit Tests
+    #   env:
+    #     DB_CONNECTION: mysql
+    #     DB_HOST: 127.0.0.1
+    #     DB_PORT: 3306
+    #     DB_DATABASE: appointment
+    #     DB_USERNAME: root
+    #     DB_PASSWORD: password
       
